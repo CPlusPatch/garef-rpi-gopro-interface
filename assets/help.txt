@@ -1,0 +1,11 @@
+| Commands
+|   -  photo
+|      Take a photo and save it to the images/ folder
+|   -  off
+|      Power off the camera
+|   -  help
+|      Displays this help menu
+|   -  stop
+|      Exit this program without powering off the camera
+|   -  debug
+|      Displays debug info
