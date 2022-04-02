@@ -1,4 +1,4 @@
 images/**
-images
+server-images/**
 .main.py.swp
 main

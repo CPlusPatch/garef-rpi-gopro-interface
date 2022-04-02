@@ -1,12 +1,16 @@
 import socket
 from PIL import Image
 import time
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 SERVER_IP = "127.0.0.1"
-SERVER_PORT = 65401
+SERVER_PORT = int(os.getenv("PORT"))
 
 class Server:
-    def __init__(self, ip, port):
+    def __init__(self, ip, port): 
         print("[+] Started dev server...")
         self.ip = ip
         self.port = port

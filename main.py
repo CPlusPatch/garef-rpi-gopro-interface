@@ -11,32 +11,83 @@
 from goprocam import GoProCamera, constants, exceptions
 import time
 from PIL import Image
-import json
 import os
 import sys
 import socket
+from dotenv import load_dotenv
+import RPi.GPIO as GPIO
 
-GOPRO_INTERFACE = "eth1"
-GOPRO_IMAGE_QUALITY = 70
+GPIO.setmode(GPIO.BCM)
+
+load_dotenv()
+
+GOPRO_INTERFACE = os.getenv("GOPRO_INTERFACE")
+GOPRO_PIN = int(os.getenv("GOPRO_PIN"))
+GOPRO_IMAGE_QUALITY = int(os.getenv("IMAGE_QUALITY"))
 OIC_IP = "127.0.0.1"
-OIC_PORT = 65401
+OIC_PORT = int(os.getenv("PORT")) # In BCM mode
+# Can be "usb" or "gpio"
+# USB mode: sends a shutdown order via the GoPro API
+# GPIO mode: send an electric signal via GPIO to force shut down the camera
+GOPRO_SHUTDOWN_MODE = "usb"
+GOPRO_SMART_START = True # If True, SEND_GOPRO_ON_SIGNAL has no effect
+SEND_GOPRO_ON_SIGNAL = False
+
+assert GOPRO_SHUTDOWN_MODE in ("usb", "gpio")
 
 class GoPro:
     def __init__(self, interface, quality = False):
         self.interface = interface
-        # Crash if the camera is not connected
-        try:
-            self.ip = GoProCamera.GoPro.getWebcamIP(interface) # Usually IP 172.29.190.51
-        except exceptions.CameraNotConnected:
-            print("[x] Camera not connected, exiting :(")
-            sys.exit(0)
+        GPIO.setup(GOPRO_PIN, GPIO.OUT)
+        if SEND_GOPRO_ON_SIGNAL and GOPRO_SMART_START == False:
+            self.turnOn()
+            i = 1
+            while True:
+                try:
+                    self.ip = GoProCamera.GoPro.getWebcamIP(interface) # Usually IP 172.29.190.51
+                    break
+                except:
+                    print(f"[~] Connecting to camera - attempt {i}")
+                    time.sleep(2)
+                    i += 1
+                    if i > 10:
+                        raise Exception("Couldn't connect to camera (10 failed attempts)")
+        if GOPRO_SMART_START:
+            print("====== SMART START ======")
+            try:
+                self.ip = GoProCamera.GoPro.getWebcamIP(interface) # Usually IP 172.29.190.51
+            except:
+                self.turnOn()
+                i = 1
+                while True:
+                    try:
+                        self.ip = GoProCamera.GoPro.getWebcamIP(interface) # Usually IP 172.29.190.51
+                        break
+                    except:
+                        print(f"[~] Connecting to camera - attempt {i}")
+                        time.sleep(2)
+                        i += 1
+                        if i > 10:
+                            raise Exception("Couldn't connect to camera (10 failed attempts)")
         self.quality = quality
+        if GOPRO_SMART_START == False and SEND_GOPRO_ON_SIGNAL == False:
+            try:
+                self.ip = GoProCamera.GoPro.getWebcamIP(interface) # Usually IP 172.29.190.51
+            except:
+                raise Exception("Couldn't connect to camera (it is probably off)")
         
         self.gopro = GoProCamera.GoPro(ip_address=self.ip, camera=constants.gpcontrol, webcam_device=interface, api_type=constants.ApiServerType.OPENGOPRO)
         try:
             self.gopro.setWiredControl(constants.on)
         except exceptions.WiredControlAlreadyEstablished: # Sometimes throws error 500 when control is already working, so ignore that
             pass
+    
+    def turnOn(self):
+        print("[~] Turning on GoPro... (pausing for 3s)")
+        GPIO.output(GOPRO_PIN, GPIO.HIGH)
+        time.sleep(3)
+        GPIO.output(GOPRO_PIN, GPIO.LOW)
+        print("[+] Turned on GoPro")
     
     def debug_info(self):
         debug = self.gopro.infoCamera()
@@ -62,8 +113,17 @@ class GoPro:
 
     
     def power_off(self):
-        print("[-] Powering off")
-        self.gopro.power_off()
+        if GOPRO_SHUTDOWN_MODE == "gpio":
+            print("[~] Turning off GoPro... (pausing for 3s)")
+            GPIO.output(GOPRO_PIN, GPIO.HIGH)
+            time.sleep(3)
+            GPIO.output(GOPRO_PIN, GPIO.LOW)
+            print("[+] Turned off GoPro")
+        elif GOPRO_SHUTDOWN_MODE == "usb":
+            print("[-] Powering off")
+            self.gopro.power_off()
+        else:
+            raise Exception("Invalid GOPRO_SHUTDOWN_MODE! Should one of: ['gpio', 'usb']")
         exit(0)
     
     def live_control(self):
@@ -193,5 +253,5 @@ class Main:
 
 if __name__ == "__main__":
     main = Main(GOPRO_INTERFACE, GOPRO_IMAGE_QUALITY, OIC_IP, OIC_PORT)
-    main.startOicTest()
-    #main.gpDebug()
+    #main.startOicTest()
+    main.gpDebug()
