@@ -17,6 +17,7 @@ import socket
 from dotenv import load_dotenv
 import RPi.GPIO as GPIO
 
+GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 
 load_dotenv()

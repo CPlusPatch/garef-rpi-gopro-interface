@@ -20,9 +20,9 @@ You may need to install `python3.9-dev` instead (or your specific version)
 Run `main.py`
 
 ### Server
-Compile and execute `main.c` with
+Compile and execute `server.c` with
 ```sh
 sh compile.sh
-./main
+./server
 ```
-(main.c is simply a wrapper for server.py for now :trollface:)
+(server.c is simply a wrapper for server.py for now :trollface:)
