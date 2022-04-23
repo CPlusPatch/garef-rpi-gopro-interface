@@ -40,6 +40,7 @@ class GoPro:
     def __init__(self, interface, quality = False):
         self.interface = interface
         GPIO.setup(GOPRO_PIN, GPIO.OUT)
+        
         if SEND_GOPRO_ON_SIGNAL and GOPRO_SMART_START == False:
             self.turnOn()
             i = 1
@@ -53,6 +54,9 @@ class GoPro:
                     i += 1
                     if i > 10:
                         raise Exception("Couldn't connect to camera (10 failed attempts)")
+        
+        # SMART START
+        # Detects if the GoPro is on, if not turns it on
         if GOPRO_SMART_START:
             print("====== SMART START ======")
             try:
@@ -91,6 +95,8 @@ class GoPro:
         print("[+] Turned on GoPro")
     
     def debug_info(self):
+        """Prints all the available debug info to the terminal
+        """
         debug = self.gopro.infoCamera()
         mac = ':'.join(debug['ap_mac'][i:i+2] for i in range(0,12,2)) # Formats the MAC address nicely
         print()
@@ -114,6 +120,11 @@ class GoPro:
 
     
     def power_off(self):
+        """Turns off the connected GoPro
+
+        Raises:
+            Exception: If GPIO_SHUTDOWN_MODE isn't valid
+        """
         if GOPRO_SHUTDOWN_MODE == "gpio":
             print("[~] Turning off GoPro... (pausing for 3s)")
             GPIO.output(GOPRO_PIN, GPIO.HIGH)
@@ -128,6 +139,8 @@ class GoPro:
         exit(0)
     
     def live_control(self):
+        """Enters a "live control" mode that allow user commands to debug functions
+        """
         command = ""
         while not ("stop" in command):
             command = input("[ ] Enter command (type 'help' for help):\n$ ")
@@ -228,6 +241,8 @@ class Main:
         self.gopro.live_control()
     
     def startOicTest(self):
+        """Tests ObcInterfaceClient server connection by taking an image with a connected GoPro and sending it to a server instance with an ObcInterfaceClient object
+        """
         print("================== DEBUG TESTS ==================")
         if not self.oic:
             print("> INITIALISING OIC")
@@ -254,5 +269,11 @@ class Main:
 
 if __name__ == "__main__":
     main = Main(GOPRO_INTERFACE, GOPRO_IMAGE_QUALITY, OIC_IP, OIC_PORT)
-    #main.startOicTest()
-    main.gpDebug()
+    
+    ######
+    # Tests
+    # OIC test: Take a photo and send it to any server instance running on localhost and same port
+    # GP debug: Connect to a GoPro and enter debug mode
+    ######
+    main.startOicTest()
+    #main.gpDebug()
