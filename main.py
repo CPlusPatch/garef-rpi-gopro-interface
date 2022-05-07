@@ -171,7 +171,7 @@ class GoPro:
         """
         print()
         name = f"photo_{time.time()}.jpg"
-        self.gopro.downloadLastMedia(self.gopro.take_photo(), custom_filename=f"images/{name}")
+        self.gopro.downloadLastMedia(self.gopro.take_photo(), custom_filename=f"images/{name}") 
         
         # Compress images when saving them to disk
         picture = Image.open(f"images/{name}")
@@ -269,11 +269,11 @@ class Main:
 
 if __name__ == "__main__":
     main = Main(GOPRO_INTERFACE, GOPRO_IMAGE_QUALITY, OIC_IP, OIC_PORT)
-    
+
     ######
     # Tests
     # OIC test: Take a photo and send it to any server instance running on localhost and same port
     # GP debug: Connect to a GoPro and enter debug mode
     ######
-    main.startOicTest()
-    #main.gpDebug()
+    #main.startOicTest()
+    main.gpDebug()

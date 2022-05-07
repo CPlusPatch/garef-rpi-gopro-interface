@@ -32,7 +32,7 @@ class Server:
         filename = f"server-images/{time.time()}.jpg"
         file = open(filename, "wb")
         data = self.conn.recv(1024)
-        file.write(data[:-3])
+        file.write(data[:-3]) # I have no idea why it needs -3, just keep it
         while True:
             data = self.conn.recv(1024)
             image += data
